@@ -1,19 +1,16 @@
-require_relative '../modules/validation'
+require_relative '../models/player'
+class Dealer < User
+  attr_accessor :player, :deck
 
-class Dealer
-  include Validation
+  validate :player, :type, Player
 
-  attr_accessor :bank, :name, :player, :cards, :deck, :points
-
-  validate :player, :type, User
+  NAME = "Dealer"
 
   def initialize(player)
-    @bank = 100
-    @name = "Dealer"
+    super(NAME)
     @player = player
     @deck = Deck.new
-    @cards = []
-    @points = 0
+    @hide = true
   end
 
   def start_game
@@ -25,23 +22,16 @@ class Dealer
     @deck.deal_card
   end
 
-  def add_card(card)
-    @cards << card
-    calculate_points(card)
+  def open_cards
+    @hide = false
   end
 
-  private
-
-  def calculate_points(card)
-    value, _ = card
-    @points += value.to_i if value.to_i.between?(2,10)
-    @points += 10 if value.to_i.zero? && Deck.not_ace?(card)
-    @points += 1 if value.to_i.zero? && Deck.ace?(card) && 21-@points > 11
-    @points += 11 if value.to_i.zero? && Deck.ace?(card) && 21-@points <= 11
+  def play
+    add_card(deal_card) if @points < 17
   end
 
   def to_s
-    "My name is #{@name} and I had #{@bank}$ and #{@cards} and points: #{@points}"
+    #need to hide cards at the end
+    super
   end
-
 end
