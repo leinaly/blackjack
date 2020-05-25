@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Validation
   def self.included(base)
     base.extend ClassMethods
@@ -39,14 +41,6 @@ module Validation
 
     def validate_type(value, type)
       raise "Wrong class for #{value}! Must be: #{type}!" unless value.is_a?(type)
-    end
-
-    def validate_format(value, format)
-      raise "Wrong data format for #{value}!" if value !~ format
-    end
-
-    def validate_speciality(value, speciality)
-      raise "Not applicable type of #{value}! Need to be from: #{speciality}" unless speciality == value
     end
   end
 end

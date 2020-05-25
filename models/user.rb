@@ -1,9 +1,11 @@
+# frozen_string_literal: true
+
 require_relative '../modules/validation'
 
 class User
   include Validation
 
-  attr_accessor :name, :bank, :cards, :points, :hide
+  attr_accessor :name, :bank, :cards, :points, :hide, :wins
 
   validate :name, :presence
   MAX_POINTS = 21
@@ -14,33 +16,47 @@ class User
     @points = 0
     @cards  = []
     @hide   = false
+    @wins   = 0
   end
 
   def add_card(card)
     raise "User can't have more than 3 cards!" if @cards.count == 3
+
     @cards << card
     calculate_points(card)
   end
 
+  def clear_cards
+    @cards = []
+    @points = 0
+  end
+
   def put_a_bet(amount = 10)
-    raise 'Not enought money!' if (@bank - amount) < 0
+    raise 'Not enought money!' if (@bank - amount).negative?
+
     @bank -= amount
+    amount
+  end
+
+  def take_money(amount = 0)
+    @bank += amount
+    amount
   end
 
   private
 
   def calculate_points(card)
-    @points += card[0].to_i if card[0].to_i.between?(1,11)
+    @points += card[0].to_i if card[0].to_i.between?(1, 11)
     @points += 10           if card[0].to_i.zero? && Deck.not_ace?(card)
-    @points += 1            if card[0].to_i.zero? && Deck.ace?(card) && MAX_POINTS-@points <= 11
-    @points += 11           if card[0].to_i.zero? && Deck.ace?(card) && MAX_POINTS-@points > 11
+    @points += 1            if card[0].to_i.zero? && Deck.ace?(card) && MAX_POINTS - @points <= 11
+    @points += 11           if card[0].to_i.zero? && Deck.ace?(card) && MAX_POINTS - @points > 11
   end
 
   def to_s
     showed, points = ''
     if hide
       @cards.count.times { showed += '[*]' }
-      points = "*"
+      points = '*'
     else
       showed = @cards.to_s
       points = @points
@@ -48,5 +64,4 @@ class User
 
     "My name is #{@name} and I had #{@bank}$ and #{showed} and points: #{points}."
   end
-
 end

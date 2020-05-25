@@ -1,10 +1,13 @@
+# frozen_string_literal: true
+
 require_relative '../models/player'
 class Dealer < User
   attr_accessor :player, :deck
 
   validate :player, :type, Player
 
-  NAME = "Dealer"
+  NAME = 'Dealer'
+  MAX_WIN_POINTS = 17
 
   def initialize(player)
     super(NAME)
@@ -14,8 +17,11 @@ class Dealer < User
   end
 
   def start_game
-    2.times{self.add_card(self.deal_card)}
-    2.times{@player.add_card(self.deal_card)}
+    clear_cards
+    @player.clear_cards
+
+    2.times { add_card(deal_card) }
+    2.times { @player.add_card(deal_card) }
   end
 
   def deal_card
@@ -26,12 +32,12 @@ class Dealer < User
     @hide = false
   end
 
-  def play
-    add_card(deal_card) if @points < 17
+  def clear_cards
+    super
+    @hide = true
   end
 
-  def to_s
-    #need to hide cards at the end
-    super
+  def play
+    add_card(deal_card) if @points < MAX_WIN_POINTS
   end
 end
