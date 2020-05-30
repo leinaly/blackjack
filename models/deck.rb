@@ -1,10 +1,9 @@
 # frozen_string_literal: true
 
+require_relative '../models/card'
+
 class Deck
   attr_accessor :cards_and_suits
-
-  СARDS_SUIT = { 'Diamonds' => "\u2666", 'Hearts' => "\u2665", 'Spades' => "\u2664", 'Clubs' => "\u2667" }
-  CARDS = %w[2 3 4 5 6 7 8 9 10 J Q K A].freeze
 
   def initialize
     @cards_and_suits = generate_deck
@@ -17,33 +16,13 @@ class Deck
     card
   end
 
-  def self.diamonds
-    СARDS_SUIT['Diamonds']
-  end
-
-  def self.hearts
-    СARDS_SUIT['Hearts']
-  end
-
-  def self.spades
-    СARDS_SUIT['Spades']
-  end
-
-  def self.clubs
-    СARDS_SUIT['Clubs']
-  end
-
-  def self.ace?(card)
-    card.first == CARDS.last
-  end
-
-  def self.not_ace?(card)
-    !ace?(card)
+  def logo
+    "#{Card.spades} #{Card.hearts} #{Card.clubs} #{Card.diamonds}"
   end
 
   private
 
   def generate_deck
-    CARDS.product(СARDS_SUIT.values)
+    Card::CARDS.zip(Card::POINTS).product(Card.cards_suit.values).map { |n_arr, s| Card.new(n_arr, s) }
   end
 end

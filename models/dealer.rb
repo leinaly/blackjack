@@ -1,27 +1,15 @@
 # frozen_string_literal: true
 
-require_relative '../models/player'
 class Dealer < User
-  attr_accessor :player, :deck
-
-  validate :player, :type, Player
+  attr_accessor :deck
 
   NAME = 'Dealer'
   MAX_WIN_POINTS = 17
 
-  def initialize(player)
+  def initialize
     super(NAME)
-    @player = player
     @deck = Deck.new
     @hide = true
-  end
-
-  def start_game
-    clear_cards
-    @player.clear_cards
-
-    2.times { add_card(deal_card) }
-    2.times { @player.add_card(deal_card) }
   end
 
   def deal_card
@@ -38,6 +26,6 @@ class Dealer < User
   end
 
   def play
-    add_card(deal_card) if @points < MAX_WIN_POINTS
+    add_card(deal_card) if @points < MAX_WIN_POINTS && @cards.count != 3
   end
 end

@@ -9,7 +9,7 @@ Style/MutableConstant:
 Metrics/ClassLength:
   Enabled: false
 Metrics/AbcSize:
-  Max: 30
+  Max: 31
 Metrics/MethodLength:
   Max: 40
 Metrics/CyclomaticComplexity:
@@ -19,7 +19,7 @@ Metrics/BlockLength:
 Layout/LineLength:
   Max: 130
 Metrics/PerceivedComplexity:
-  Max: 8
+  Max: 12
 Layout/EndOfLine:
   Enabled: false
 Naming/AsciiIdentifiers:

@@ -2,157 +2,119 @@
 
 require_relative 'models/user'
 require_relative 'models/dealer'
+require_relative 'models/player'
 require_relative 'models/deck'
+require_relative 'modules/validation'
+require_relative 'modules/status'
 
 class Game
-  attr_accessor :user, :dealer, :game_bank
+  include Validation
+  include Status
 
-  MAX_CARDS = 3
+  attr_reader :status
+  attr_reader :player, :dealer, :game_bank, :winner
 
-  def initialize
+  validate :player, :type, Player
+  validate :dealer, :type, Dealer
+
+  def initialize(player_name)
+    @player = Player.new(player_name)
+    @dealer = Dealer.new
     @game_bank = 0
+    @winner = nil
+    game_initialized_st
   end
 
-  def menu
-    puts "Welcome to Blackjack game! #{Deck.spades} #{Deck.hearts} #{Deck.clubs} #{Deck.diamonds}"
-    puts '1 - Start new game'
-    puts '0 - Exit'
-
-    print 'Enter action number: '
-    user_input = gets.chomp.to_i
-
-    case user_input
-    when 1
-      new_game
-    when 0
-      puts 'By, by!'
-    else
-      puts "Sorry, don't know this action!"
-    end
+  # available_actions for this game status
+  def actions
+    %w[game_initialized start_round user_round dealer_round open_cards take_a_bet release_money game_over round_over]
   end
 
-  private
+  def start_round
+    @dealer.clear_cards
+    @player.clear_cards
 
-  def new_game
-    menu_retry("Let's start!") do
-      puts 'Enter you name:'
-      user_input = gets.chomp
-      @user = Player.new(user_input)
-      @dealer = Dealer.new(@user)
+    2.times { @dealer.add_card(@dealer.deal_card) }
+    2.times { @player.add_card(@dealer.deal_card) }
 
-      while new_round?
-        round
-        final_score
-      end
-    end
-  end
-
-  def round
-    @dealer.start_game
     take_a_bet(@dealer.put_a_bet)
-    take_a_bet(@user.put_a_bet)
+    take_a_bet(@player.put_a_bet)
 
-    puts "Game bank: #{@game_bank}"
-    show_stats
+    start_round_st
+  end
 
-    until game_over?
-      user_step
-      show_stats
-    end
+  def player_skip
+    dealer_play
+    dealer_round_st
+  end
+
+  def player_add_card
+    @player.add_card(@dealer.deal_card)
+    round_over? ? open_cards : dealer_round_st
+  end
+
+  def player_ended
+    game_over_st
+  end
+
+  def open_cards
     @dealer.open_cards
-    puts 'Game over !'
-    show_stats
+    open_cards_st
   end
 
-  def user_step
-    puts "#{@user.name} your turn. Choose:"
-    puts '1 - Skip'
-    puts '2 - Add card'
-    puts '3 - Open cards'
+  def round_over
+    round_over_st if round_over?
+  end
 
-    user_input = gets.chomp.to_i
-    case user_input
-    when 1
-      puts "#{@dealer.name} turn!"
-      @dealer.play
-      puts "#{@user.name} turn!"
-    when 2
-      @user.add_card(@dealer.deal_card)
-      puts "#{@dealer.name} turn!"
-    when 3
-      @dealer.open_cards
-    else
-      puts "Sorry, don't know this action!"
+  def player_cards
+    @player.cards
+  end
+
+  def dealer_cards
+    @dealer.cards
+  end
+
+  def dealer_play
+    @dealer.play
+    user_round_st
+  end
+
+  def choose_winner
+    if (@dealer.points == @player.points) || (@player.points > User::MAX_POINTS && @dealer.points > User::MAX_POINTS)
+      @winner = nil
     end
-  end
-
-  def new_round?
-    return true if first_round
-
-    puts 'Do you want to play again? 1 - yes, 0 - no'
-    user_input = gets.chomp.to_i
-    case user_input
-    when 1
-      true
-    when 0
-      false
-    else
-      "Sorry I don't know this command!"
+    @winner = @dealer if @player.points > User::MAX_POINTS && @dealer.points <= User::MAX_POINTS
+    @winner = @player if @dealer.points > User::MAX_POINTS && @player.points <= User::MAX_POINTS
+    if ((User::MAX_POINTS - @dealer.points) < (User::MAX_POINTS - @player.points)) && (User::MAX_POINTS - @dealer.points) >= 0
+      @winner = @dealer
     end
-  end
-
-  def first_round
-    (@user.wins + @dealer.wins).zero?
-  end
-
-  def final_score
-    if (@dealer.points == @user.points) || (@user.points > User::MAX_POINTS && @dealer.points > User::MAX_POINTS)
-      return 'Dead heat'
+    if ((User::MAX_POINTS - @dealer.points) > (User::MAX_POINTS - @player.points)) && (User::MAX_POINTS - @player.points) >= 0
+      @winner = @player
     end
-
-    winner = @dealer if @user.points > User::MAX_POINTS && @dealer.points <= User::MAX_POINTS
-    winner = @user   if @dealer.points > User::MAX_POINTS && @user.points <= User::MAX_POINTS
-    if ((User::MAX_POINTS - @dealer.points) < (User::MAX_POINTS - @user.points)) && (User::MAX_POINTS - @dealer.points) >= 0
-      winner = @dealer
-    end
-    if ((User::MAX_POINTS - @dealer.points) > (User::MAX_POINTS - @user.points)) && (User::MAX_POINTS - @user.points) >= 0
-      winner = @user
-    end
-    puts "#{winner.name} win the game!"
-    winner.wins += 1
-    winner.take_money(release_money)
-    puts "Dealer : User -- #{@dealer.wins} : #{@user.wins}"
+    @winner
   end
 
-  def game_over?
-    (@dealer.cards.count == MAX_CARDS && @user.cards.count == MAX_CARDS) || !@dealer.hide
+  def congrat_the_winner
+    @winner.add_win
+    @winner.take_money(release_money)
   end
 
-  def show_stats
-    puts @dealer
-    puts @user
+  def round_over?
+    (@dealer.cards.count == User::MAX_CARDS && @player.cards.count == User::MAX_CARDS) || !@dealer.hide
   end
 
   def take_a_bet(amount = 10)
     @game_bank += amount
+    take_a_bet_st
   end
 
   def release_money(amount = @game_bank)
     @game_bank -= amount
+    release_money_st
     amount
   end
 
-  def menu_retry(success_msg)
-    raise 'Need to pass block in method!' unless block_given?
-
-    begin
-      yield
-    rescue RuntimeError => e
-      puts e.message
-      retry
-    end
-    puts success_msg
+  def logo
+    @dealer.deck.logo
   end
 end
-
-Game.new.menu

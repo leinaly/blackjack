@@ -9,6 +9,7 @@ class User
 
   validate :name, :presence
   MAX_POINTS = 21
+  MAX_CARDS  = 3
 
   def initialize(name)
     @name   = name
@@ -43,25 +44,27 @@ class User
     amount
   end
 
+  def add_win
+    @wins += 1
+  end
+
   private
 
   def calculate_points(card)
-    @points += card[0].to_i if card[0].to_i.between?(1, 11)
-    @points += 10           if card[0].to_i.zero? && Deck.not_ace?(card)
-    @points += 1            if card[0].to_i.zero? && Deck.ace?(card) && MAX_POINTS - @points <= 11
-    @points += 11           if card[0].to_i.zero? && Deck.ace?(card) && MAX_POINTS - @points > 11
+    @points += card.points
+    @points -= 10 if @cards.count > 2 && @cards.any?(&:ace?) && @points > MAX_POINTS
   end
 
   def to_s
     showed, points = ''
     if hide
-      @cards.count.times { showed += '[*]' }
+      @cards.each { |_el| showed += '[*]' }
       points = '*'
     else
-      showed = @cards.to_s
+      @cards.each { |el| showed += "[#{el.name}, #{el.suit}]" }
       points = @points
     end
 
-    "My name is #{@name} and I had #{@bank}$ and #{showed} and points: #{points}."
+    "My name is #{@name} and I had #{@bank}$ and #{@cards.count} cards: #{showed} and points: #{points}."
   end
 end
